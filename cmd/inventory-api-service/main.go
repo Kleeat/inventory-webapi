@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Kleeat/inventory-webapi/api"
+	"github.com/Kleeat/inventory-webapi/internal/inventoryapi"
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,6 +22,13 @@ func main() {
 	}
 	engine := gin.New()
 	engine.Use(gin.Recovery())
+
+	handleFunctions := &inventoryapi.ApiHandleFunctions{
+		EquipmentAPI:       inventoryapi.NewEquipmentAPI(),
+		LocationsAPI:       inventoryapi.NewLocationsAPI(),
+		ServiceRequestsAPI: inventoryapi.NewServiceRequestsAPI(),
+	}
+	inventoryapi.NewRouterWithGinEngine(engine, *handleFunctions)
 
 	engine.GET("/openapi", api.HandleOpenApi)
 	engine.Run(":" + port)
