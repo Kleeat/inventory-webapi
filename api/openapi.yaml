@@ -1,0 +1,886 @@
+openapi: 3.0.3
+info:
+  title: Hospital Equipment & Service Management API
+  description: API for managing hospital equipment inventory, service requests, and location tracking.
+  version: 1.0.0
+  contact:
+    name: Dmytro Dzhuha, Szenasi Levente
+
+servers:
+  - url: http://localhost:8080/v1
+    description: Local development
+
+tags:
+  - name: Equipment
+    description: Hospital equipment inventory management
+
+  - name: Service Requests
+    description: Equipment service and repair request lifecycle
+
+  - name: Locations
+    description: Physical location hierarchy and equipment placement
+
+paths:
+  /equipment:
+    get:
+      tags: [Equipment]
+      summary: List equipment
+      description: Returns a paginated list of equipment. Supports filtering by status, type, and location.
+      operationId: listEquipment
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/EquipmentStatus'
+        - name: type
+          in: query
+          schema:
+            type: string
+            example: MRI
+        - name: locationId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Paginated equipment list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EquipmentPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+    post:
+      tags: [Equipment]
+      summary: Create equipment
+      description: Registers a new piece of equipment in the inventory.
+      operationId: createEquipment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EquipmentCreate'
+      responses:
+        '201':
+          description: Equipment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Equipment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Inventory number already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /equipment/{equipmentId}:
+    parameters:
+      - $ref: '#/components/parameters/EquipmentId'
+
+    get:
+      tags: [Equipment]
+      summary: Get equipment
+      operationId: getEquipment
+      responses:
+        '200':
+          description: Equipment detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Equipment'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Equipment]
+      summary: Update equipment
+      description: Full update of equipment fields.
+      operationId: updateEquipment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EquipmentUpdate'
+      responses:
+        '200':
+          description: Updated equipment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Equipment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Equipment]
+      summary: Decommission equipment
+      description: Marks equipment as decommissioned (soft delete). Equipment with open service requests cannot be decommissioned.
+      operationId: decommissionEquipment
+      responses:
+        '204':
+          description: Equipment decommissioned
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Cannot decommission — equipment has open service requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /equipment/{equipmentId}/location:
+    parameters:
+      - $ref: '#/components/parameters/EquipmentId'
+
+    patch:
+      tags: [Equipment]
+      summary: Move equipment to a new location
+      operationId: moveEquipment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [locationId]
+              properties:
+                locationId:
+                  type: string
+                  format: uuid
+                  description: Target location ID
+                movedAt:
+                  type: string
+                  format: date-time
+                  description: Timestamp of the move (defaults to now)
+                note:
+                  type: string
+                  maxLength: 500
+      responses:
+        '200':
+          description: Equipment with updated location
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Equipment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /equipment/{equipmentId}/service-requests:
+    parameters:
+      - $ref: '#/components/parameters/EquipmentId'
+
+    get:
+      tags: [Equipment, Service Requests]
+      summary: List service requests for equipment
+      operationId: listEquipmentServiceRequests
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/ServiceRequestStatus'
+      responses:
+        '200':
+          description: Service requests for this equipment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceRequestPage'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /service-requests:
+    get:
+      tags: [Service Requests]
+      summary: List service requests
+      operationId: listServiceRequests
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/ServiceRequestStatus'
+        - name: equipmentId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: assignedTo
+          in: query
+          description: Filter by assigned technician ID
+          schema:
+            type: string
+            format: uuid
+        - name: priority
+          in: query
+          schema:
+            $ref: '#/components/schemas/Priority'
+      responses:
+        '200':
+          description: Paginated service request list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceRequestPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+    post:
+      tags: [Service Requests]
+      summary: Create service request
+      description: Medical staff submits a new service/repair request for a piece of equipment.
+      operationId: createServiceRequest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceRequestCreate'
+      responses:
+        '201':
+          description: Service request created with status NEW
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceRequest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Referenced equipment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /service-requests/{requestId}:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+
+    get:
+      tags: [Service Requests]
+      summary: Get service request
+      operationId: getServiceRequest
+      responses:
+        '200':
+          description: Service request detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Service Requests]
+      summary: Update service request details
+      description: Updates editable fields. To change status use PATCH /service-requests/{id}/status.
+      operationId: updateServiceRequest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceRequestUpdate'
+      responses:
+        '200':
+          description: Updated service request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceRequest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Cannot edit a closed service request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags: [Service Requests]
+      summary: Delete service request
+      description: Only NEW requests that have not been assigned can be deleted.
+      operationId: deleteServiceRequest
+      responses:
+        '204':
+          description: Service request deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Cannot delete a request that is already assigned or in progress
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /service-requests/{requestId}/status:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+
+    patch:
+      tags: [Service Requests]
+      summary: Transition service request status
+      description: |
+        Allowed status transitions:
+        - `NEW` → `ASSIGNED`
+        - `ASSIGNED` → `IN_PROGRESS`
+        - `IN_PROGRESS` → `CLOSED`
+        - `ASSIGNED` → `NEW` (unassign)
+      operationId: transitionServiceRequestStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  $ref: '#/components/schemas/ServiceRequestStatus'
+                assignedTo:
+                  type: string
+                  format: uuid
+                  description: Required when transitioning to ASSIGNED
+                resolutionNote:
+                  type: string
+                  maxLength: 2000
+                  description: Required when transitioning to CLOSED
+      responses:
+        '200':
+          description: Service request with updated status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceRequest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid status transition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /locations:
+    get:
+      tags: [Locations]
+      summary: List locations
+      operationId: listLocations
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: building
+          in: query
+          schema:
+            type: string
+        - name: floor
+          in: query
+          schema:
+            type: string
+        - name: department
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated location list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+    post:
+      tags: [Locations]
+      summary: Create location
+      operationId: createLocation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationCreate'
+      responses:
+        '201':
+          description: Location created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Location with same building/floor/department/room already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /locations/{locationId}:
+    parameters:
+      - $ref: '#/components/parameters/LocationId'
+
+    get:
+      tags: [Locations]
+      summary: Get location
+      operationId: getLocation
+      responses:
+        '200':
+          description: Location detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Locations]
+      summary: Update location
+      operationId: updateLocation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationUpdate'
+      responses:
+        '200':
+          description: Updated location
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Locations]
+      summary: Delete location
+      description: Cannot delete a location that currently has equipment assigned to it.
+      operationId: deleteLocation
+      responses:
+        '204':
+          description: Location deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Location still has equipment assigned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /locations/{locationId}/equipment:
+    parameters:
+      - $ref: '#/components/parameters/LocationId'
+
+    get:
+      tags: [Locations, Equipment]
+      summary: List equipment at a location
+      operationId: listEquipmentAtLocation
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/EquipmentStatus'
+      responses:
+        '200':
+          description: Equipment currently at this location
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EquipmentPage'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+
+  parameters:
+    EquipmentId:
+      name: equipmentId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    RequestId:
+      name: requestId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    LocationId:
+      name: locationId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+
+    PageSizeParam:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  responses:
+    BadRequest:
+      description: Invalid input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+
+    EquipmentStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - IN_SERVICE
+        - DECOMMISSIONED
+      description: |
+        - `ACTIVE` – in normal use
+        - `IN_SERVICE` – undergoing maintenance/repair
+        - `DECOMMISSIONED` – retired from service
+
+    ServiceRequestStatus:
+      type: string
+      enum:
+        - NEW
+        - ASSIGNED
+        - IN_PROGRESS
+        - CLOSED
+      description: |
+        - `NEW` – submitted, awaiting assignment
+        - `ASSIGNED` – assigned to a technician
+        - `IN_PROGRESS` – technician is actively working on it
+        - `CLOSED` – resolved and closed
+
+    Priority:
+      type: string
+      enum:
+        - LOW
+        - MEDIUM
+        - HIGH
+        - CRITICAL
+
+    LocationBase:
+      type: object
+      required: [building, floor, department, room]
+      properties:
+        building:
+          type: string
+          maxLength: 100
+          example: "Pavilón A"
+        floor:
+          type: string
+          maxLength: 50
+          example: "2. poschodie"
+        department:
+          type: string
+          maxLength: 100
+          example: "Kardiológia"
+        room:
+          type: string
+          maxLength: 50
+          example: "Miestnosť 204"
+        description:
+          type: string
+          maxLength: 500
+
+    LocationCreate:
+      allOf:
+        - $ref: '#/components/schemas/LocationBase'
+
+    LocationUpdate:
+      allOf:
+        - $ref: '#/components/schemas/LocationBase'
+
+    Location:
+      allOf:
+        - $ref: '#/components/schemas/LocationBase'
+        - type: object
+          required: [id, createdAt, updatedAt]
+          properties:
+            id:
+              type: string
+              format: uuid
+            equipmentCount:
+              type: integer
+              readOnly: true
+              description: Number of active equipment items currently at this location
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    LocationPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Location'
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+
+    EquipmentBase:
+      type: object
+      required: [name, type, inventoryNumber, locationId]
+      properties:
+        name:
+          type: string
+          maxLength: 200
+          example: "Ultrazvuk Philips EPIQ 7"
+        type:
+          type: string
+          maxLength: 100
+          example: "Ultrasonograf"
+        inventoryNumber:
+          type: string
+          maxLength: 50
+          description: Unique inventory/asset number
+          example: "INV-2024-00421"
+        serialNumber:
+          type: string
+          maxLength: 100
+        manufacturer:
+          type: string
+          maxLength: 200
+        model:
+          type: string
+          maxLength: 200
+        purchaseDate:
+          type: string
+          format: date
+        warrantyExpiry:
+          type: string
+          format: date
+        lifespanYears:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: Expected operational lifespan in years
+        locationId:
+          type: string
+          format: uuid
+          description: Current location ID
+        notes:
+          type: string
+          maxLength: 2000
+
+    EquipmentCreate:
+      allOf:
+        - $ref: '#/components/schemas/EquipmentBase'
+
+    EquipmentUpdate:
+      allOf:
+        - $ref: '#/components/schemas/EquipmentBase'
+        - type: object
+          properties:
+            status:
+              $ref: '#/components/schemas/EquipmentStatus'
+
+    Equipment:
+      allOf:
+        - $ref: '#/components/schemas/EquipmentBase'
+        - type: object
+          required: [id, status, createdAt, updatedAt]
+          properties:
+            id:
+              type: string
+              format: uuid
+            status:
+              $ref: '#/components/schemas/EquipmentStatus'
+            location:
+              $ref: '#/components/schemas/Location'
+            openServiceRequestCount:
+              type: integer
+              readOnly: true
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    EquipmentPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Equipment'
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+
+    ServiceRequestBase:
+      type: object
+      required: [equipmentId, title, description, priority]
+      properties:
+        title:
+          type: string
+          maxLength: 200
+          example: "Porucha displeja – nereaguje na dotyk"
+        description:
+          type: string
+          maxLength: 5000
+          example: "Displej prestáva reagovať po 30 minútach prevádzky."
+        priority:
+          $ref: '#/components/schemas/Priority'
+        equipmentId:
+          type: string
+          format: uuid
+
+    ServiceRequestCreate:
+      allOf:
+        - $ref: '#/components/schemas/ServiceRequestBase'
+        - type: object
+          properties:
+            reportedBy:
+              type: string
+              format: uuid
+              description: ID of the staff member reporting the issue
+
+    ServiceRequestUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 5000
+        priority:
+          $ref: '#/components/schemas/Priority'
+
+    ServiceRequest:
+      allOf:
+        - $ref: '#/components/schemas/ServiceRequestBase'
+        - type: object
+          required: [id, status, createdAt, updatedAt]
+          properties:
+            id:
+              type: string
+              format: uuid
+            status:
+              $ref: '#/components/schemas/ServiceRequestStatus'
+            equipment:
+              $ref: '#/components/schemas/Equipment'
+            reportedBy:
+              type: string
+              format: uuid
+            assignedTo:
+              type: string
+              format: uuid
+              nullable: true
+            resolutionNote:
+              type: string
+              nullable: true
+            closedAt:
+              type: string
+              format: date-time
+              nullable: true
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    ServiceRequestPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceRequest'
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          example: EQUIPMENT_NOT_FOUND
+        message:
+          type: string
+          example: Equipment with id '3fa85f64-...' was not found.
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
