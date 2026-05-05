@@ -1,25 +1,40 @@
 #!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
 command=${1:-start}
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-export INVENTORY_API_ENVIRONMENT="Development"
 export INVENTORY_API_PORT="8080"
+export INVENTORY_API_MONGODB_USERNAME="root"
+export INVENTORY_API_MONGODB_PASSWORD="neUhaDnes"
+
+# Helper function (equivalent to PowerShell function mongo)
+mongo() {
+  docker compose --file "$PROJECT_ROOT/deployments/docker-compose/compose.yaml" "$@"
+}
 
 case "$command" in
-  start)
-    go run "$PROJECT_ROOT/cmd/inventory-api-service"
-    ;;
   openapi)
     docker run --rm -ti \
       -v "$PROJECT_ROOT:/local" \
       openapitools/openapi-generator-cli \
       generate -c /local/scripts/generator-cfg.yaml
     ;;
+
+  start)
+    trap 'mongo down' EXIT
+
+    mongo up --detach
+    go run "$PROJECT_ROOT/cmd/inventory-api-service"
+    ;;
+
+  mongo)
+    mongo up
+    ;;
+
   *)
     echo "Unknown command: $command"
     exit 1
