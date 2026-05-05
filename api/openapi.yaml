@@ -183,7 +183,7 @@ paths:
       - $ref: '#/components/parameters/EquipmentId'
 
     get:
-      tags: [Equipment, Service Requests]
+      tags: [Equipment]
       summary: List service requests for equipment
       operationId: listEquipmentServiceRequests
       parameters:
@@ -499,7 +499,7 @@ paths:
       - $ref: '#/components/parameters/LocationId'
 
     get:
-      tags: [Locations, Equipment]
+      tags: [Locations]
       summary: List equipment at a location
       operationId: listEquipmentAtLocation
       parameters:

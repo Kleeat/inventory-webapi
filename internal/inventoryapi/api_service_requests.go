@@ -28,10 +28,6 @@ type ServiceRequestsAPI interface {
     // Get service request 
      GetServiceRequest(c *gin.Context)
 
-    // ListEquipmentServiceRequests Get /v1/equipment/:equipmentId/service-requests
-    // List service requests for equipment 
-     ListEquipmentServiceRequests(c *gin.Context)
-
     // ListServiceRequests Get /v1/service-requests
     // List service requests 
      ListServiceRequests(c *gin.Context)

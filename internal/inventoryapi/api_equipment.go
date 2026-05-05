@@ -32,10 +32,6 @@ type EquipmentAPI interface {
     // List equipment 
      ListEquipment(c *gin.Context)
 
-    // ListEquipmentAtLocation Get /v1/locations/:locationId/equipment
-    // List equipment at a location 
-     ListEquipmentAtLocation(c *gin.Context)
-
     // ListEquipmentServiceRequests Get /v1/equipment/:equipmentId/service-requests
     // List service requests for equipment 
      ListEquipmentServiceRequests(c *gin.Context)
