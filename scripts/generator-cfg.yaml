@@ -1,0 +1,8 @@
+generatorName: go-gin-server
+outputDir: /local
+inputSpec: /local/api/openapi.yaml
+enablePostProcessFile: true
+additionalProperties:
+  apiPath: internal/inventoryapi
+  packageName: inventoryapi
+  interfaceOnly: true
