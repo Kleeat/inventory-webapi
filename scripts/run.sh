@@ -31,6 +31,10 @@ case "$command" in
     go run "$PROJECT_ROOT/cmd/inventory-api-service"
     ;;
 
+  test)
+    go test -v ./...
+    ;;
+
   mongo)
     mongo up
     ;;

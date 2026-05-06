@@ -80,11 +80,7 @@ func NewMongoService[DocType interface{}](config MongoServiceConfig) DbService[D
 	}
 
 	if svc.DbName == "" {
-		svc.DbName = enviro("INVENTORY_API_MONGODB_DATABASE", "<pfx>-ambulance-wl")
-	}
-
-	if svc.Collection == "" {
-		svc.Collection = enviro("INVENTORY_API_MONGODB_COLLECTION", "ambulance")
+		svc.DbName = enviro("INVENTORY_API_MONGODB_DATABASE", "xds-inventory")
 	}
 
 	if svc.Timeout == 0 {
