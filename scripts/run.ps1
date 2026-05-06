@@ -22,6 +22,9 @@ switch ($command) {
     "test" {
         go test -v ./...
     }
+    "docker" {
+        docker build -t __docker-id__/inventory-webapi:local-build -f ${ProjectRoot}/build/docker/Dockerfile .
+   }
     "mongo" {
         mongo up
     }

@@ -1,0 +1,5 @@
+internal/inventoryapi/api_*
+internal/inventoryapi/model_*
+internal/inventoryapi/routers.go
+build/
+deployments/

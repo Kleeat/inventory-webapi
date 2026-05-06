@@ -35,6 +35,10 @@ case "$command" in
     go test -v ./...
     ;;
 
+  docker)
+    docker build -t kleeat/inventory-webapi:local-build -f "$PROJECT_ROOT/build/docker/Dockerfile" .
+    ;;
+
   mongo)
     mongo up
     ;;
