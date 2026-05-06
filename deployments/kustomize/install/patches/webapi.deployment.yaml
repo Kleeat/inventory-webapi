@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xds-inventory-webapi
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: init-mongodb
+          env:
+            - name: INVENTORY_API_MONGODB_HOST
+              value: null
+              valueFrom:
+                configMapKeyRef:
+                  name: mongodb-connection
+                  key: host
+            - name: INVENTORY_API_MONGODB_PORT
+              value: null
+              valueFrom:
+                configMapKeyRef:
+                  name: mongodb-connection
+                  key: port
+            - name: INVENTORY_API_MONGODB_USERNAME
+              value: null
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-auth
+                  key: username
+            - name: INVENTORY_API_MONGODB_PASSWORD
+              value: null
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-auth
+                  key: password
+      containers:
+        - name: xds-inventory-webapi-container
+          env:
+            - name: INVENTORY_API_MONGODB_HOST
+              value: null
+              valueFrom:
+                configMapKeyRef:
+                  name: mongodb-connection
+                  key: host
+            - name: INVENTORY_API_MONGODB_PORT
+              value: null
+              valueFrom:
+                configMapKeyRef:
+                  name: mongodb-connection
+                  key: port
+            - name: INVENTORY_API_MONGODB_USERNAME
+              value: null
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-auth
+                  key: username
+            - name: INVENTORY_API_MONGODB_PASSWORD
+              value: null
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-auth
+                  key: password
