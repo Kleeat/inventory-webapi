@@ -24,6 +24,8 @@ type DbService[DocType interface{}] interface {
 	CountDocumentsByFilter(ctx context.Context, filter bson.D) (int64, error)
 	UpdateDocument(ctx context.Context, id string, document *DocType) error
 	DeleteDocument(ctx context.Context, id string) error
+	Aggregate(ctx context.Context, pipeline interface{}) ([]bson.Raw, error)
+	CollectionName() string
 	Disconnect(ctx context.Context) error
 }
 
@@ -313,6 +315,29 @@ func (m *mongoSvc[DocType]) UpdateDocument(ctx context.Context, id string, docum
 	}
 	_, err = collection.ReplaceOne(ctx, bson.D{{Key: "id", Value: id}}, document)
 	return err
+}
+
+func (m *mongoSvc[DocType]) CollectionName() string {
+	return m.Collection
+}
+
+func (m *mongoSvc[DocType]) Aggregate(ctx context.Context, pipeline interface{}) ([]bson.Raw, error) {
+	ctx, contextCancel := context.WithTimeout(ctx, m.Timeout)
+	defer contextCancel()
+	client, err := m.connect(ctx)
+	if err != nil {
+		return nil, err
+	}
+	cursor, err := client.Database(m.DbName).Collection(m.Collection).Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+	var results []bson.Raw
+	if err := cursor.All(ctx, &results); err != nil {
+		return nil, err
+	}
+	return results, nil
 }
 
 func (m *mongoSvc[DocType]) DeleteDocument(ctx context.Context, id string) error {

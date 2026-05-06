@@ -1,7 +1,6 @@
 package inventoryapi
 
 import (
-	"context"
 	"log"
 	"net/http"
 	"time"
@@ -28,7 +27,6 @@ func respondError(c *gin.Context, status int, message string, err error) {
 	}
 	c.JSON(status, body)
 }
-
 
 func getEquipmentDb(c *gin.Context) (db_service.DbService[EquipmentDoc], bool) {
 	value, exists := c.Get("db_equipment")

@@ -71,6 +71,19 @@ func (m *DbServiceMock[DocType]) DeleteDocument(ctx context.Context, id string) 
 	return args.Error(0)
 }
 
+func (m *DbServiceMock[DocType]) Aggregate(ctx context.Context, pipeline interface{}) ([]bson.Raw, error) {
+	args := m.Called(ctx, pipeline)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]bson.Raw), args.Error(1)
+}
+
+func (m *DbServiceMock[DocType]) CollectionName() string {
+	args := m.Called()
+	return args.String(0)
+}
+
 func (m *DbServiceMock[DocType]) Disconnect(ctx context.Context) error {
 	args := m.Called(ctx)
 	return args.Error(0)
