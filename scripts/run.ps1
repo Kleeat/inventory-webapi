@@ -1,4 +1,13 @@
-...
+param (
+    $command
+)
+
+if (-not $command)  {
+    $command = "start"
+}
+
+$ProjectRoot = "${PSScriptRoot}/.."
+
 $env:INVENTORY_API_PORT="8080"
 $env:INVENTORY_API_MONGODB_USERNAME="root"
 $env:INVENTORY_API_MONGODB_PASSWORD="neUhaDnes"
