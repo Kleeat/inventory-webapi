@@ -73,7 +73,7 @@ func setupDb(engine *gin.Engine) func() {
 	dbLocation := db_service.NewMongoService[inventoryapi.Location](db_service.MongoServiceConfig{
 		Collection: "locations",
 	})
-	dbServiceRequest := db_service.NewMongoService[inventoryapi.ServiceRequest](db_service.MongoServiceConfig{
+	dbServiceRequest := db_service.NewMongoService[inventoryapi.ServiceRequestDoc](db_service.MongoServiceConfig{
 		Collection: "service_requests",
 	})
 

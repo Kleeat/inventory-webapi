@@ -56,17 +56,16 @@ func getLocationDb(c *gin.Context) (db_service.DbService[Location], bool) {
 	return db, true
 }
 
-func getServiceRequestDb(c *gin.Context) (db_service.DbService[ServiceRequest], bool) {
+func getServiceRequestDb(c *gin.Context) (db_service.DbService[ServiceRequestDoc], bool) {
 	value, exists := c.Get("db_service_request")
 	if !exists {
 		respondError(c, http.StatusInternalServerError, "service request db not found", nil)
 		return nil, false
 	}
-	db, ok := value.(db_service.DbService[ServiceRequest])
+	db, ok := value.(db_service.DbService[ServiceRequestDoc])
 	if !ok {
 		respondError(c, http.StatusInternalServerError, "service request db context is not of required type", nil)
 		return nil, false
 	}
-	
 	return db, true
 }
