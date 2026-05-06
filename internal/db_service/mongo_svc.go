@@ -18,6 +18,10 @@ import (
 type DbService[DocType interface{}] interface {
 	CreateDocument(ctx context.Context, id string, document *DocType) error
 	FindDocument(ctx context.Context, id string) (*DocType, error)
+	FindDocuments(ctx context.Context) ([]*DocType, error)
+	FindDocumentsByFilter(ctx context.Context, filter bson.D) ([]*DocType, error)
+	FindDocumentsByFilterPaginated(ctx context.Context, filter bson.D, skip, limit int64) ([]*DocType, error)
+	CountDocumentsByFilter(ctx context.Context, filter bson.D) (int64, error)
 	UpdateDocument(ctx context.Context, id string, document *DocType) error
 	DeleteDocument(ctx context.Context, id string) error
 	Disconnect(ctx context.Context) error
@@ -176,6 +180,98 @@ func (m *mongoSvc[DocType]) CreateDocument(ctx context.Context, id string, docum
 
 	_, err = collection.InsertOne(ctx, document)
 	return err
+}
+
+func (m *mongoSvc[DocType]) FindDocuments(ctx context.Context) ([]*DocType, error) {
+	ctx, contextCancel := context.WithTimeout(ctx, m.Timeout)
+	defer contextCancel()
+	client, err := m.connect(ctx)
+	if err != nil {
+		return nil, err
+	}
+	db := client.Database(m.DbName)
+	collection := db.Collection(m.Collection)
+	cursor, err := collection.Find(ctx, bson.D{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+	var documents []*DocType
+	for cursor.Next(ctx) {
+		var doc DocType
+		if err := cursor.Decode(&doc); err != nil {
+			return nil, err
+		}
+		documents = append(documents, &doc)
+	}
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+	return documents, nil
+}
+
+func (m *mongoSvc[DocType]) FindDocumentsByFilter(ctx context.Context, filter bson.D) ([]*DocType, error) {
+	ctx, contextCancel := context.WithTimeout(ctx, m.Timeout)
+	defer contextCancel()
+	client, err := m.connect(ctx)
+	if err != nil {
+		return nil, err
+	}
+	db := client.Database(m.DbName)
+	collection := db.Collection(m.Collection)
+	cursor, err := collection.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+	var documents []*DocType
+	for cursor.Next(ctx) {
+		var doc DocType
+		if err := cursor.Decode(&doc); err != nil {
+			return nil, err
+		}
+		documents = append(documents, &doc)
+	}
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+	return documents, nil
+}
+
+func (m *mongoSvc[DocType]) FindDocumentsByFilterPaginated(ctx context.Context, filter bson.D, skip, limit int64) ([]*DocType, error) {
+	ctx, contextCancel := context.WithTimeout(ctx, m.Timeout)
+	defer contextCancel()
+	client, err := m.connect(ctx)
+	if err != nil {
+		return nil, err
+	}
+	collection := client.Database(m.DbName).Collection(m.Collection)
+	opts := options.Find().SetSkip(skip).SetLimit(limit)
+	cursor, err := collection.Find(ctx, filter, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+	var documents []*DocType
+	for cursor.Next(ctx) {
+		var doc DocType
+		if err := cursor.Decode(&doc); err != nil {
+			return nil, err
+		}
+		documents = append(documents, &doc)
+	}
+	return documents, cursor.Err()
+}
+
+func (m *mongoSvc[DocType]) CountDocumentsByFilter(ctx context.Context, filter bson.D) (int64, error) {
+	ctx, contextCancel := context.WithTimeout(ctx, m.Timeout)
+	defer contextCancel()
+	client, err := m.connect(ctx)
+	if err != nil {
+		return 0, err
+	}
+	collection := client.Database(m.DbName).Collection(m.Collection)
+	return collection.CountDocuments(ctx, filter)
 }
 
 func (m *mongoSvc[DocType]) FindDocument(ctx context.Context, id string) (*DocType, error) {

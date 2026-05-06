@@ -67,7 +67,7 @@ func setupCorsMiddleware(engine *gin.Engine) {
 }
 
 func setupDb(engine *gin.Engine) func() {
-	dbEquipment := db_service.NewMongoService[inventoryapi.Equipment](db_service.MongoServiceConfig{
+	dbEquipment := db_service.NewMongoService[inventoryapi.EquipmentDoc](db_service.MongoServiceConfig{
 		Collection: "equipment",
 	})
 	dbLocation := db_service.NewMongoService[inventoryapi.Location](db_service.MongoServiceConfig{
