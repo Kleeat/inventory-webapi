@@ -18,18 +18,7 @@ type EquipmentCreate struct {
 	// Unique inventory/asset number
 	InventoryNumber string `json:"inventoryNumber"`
 
-	SerialNumber string `json:"serialNumber,omitempty"`
-
-	Manufacturer string `json:"manufacturer,omitempty"`
-
-	Model string `json:"model,omitempty"`
-
-	PurchaseDate string `json:"purchaseDate,omitempty"`
-
 	WarrantyExpiry string `json:"warrantyExpiry,omitempty"`
-
-	// Expected operational lifespan in years
-	LifespanYears int32 `json:"lifespanYears,omitempty"`
 
 	// Current location ID
 	LocationId string `json:"locationId"`

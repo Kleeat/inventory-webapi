@@ -18,7 +18,4 @@ type ServiceRequestCreate struct {
 	Priority Priority `json:"priority"`
 
 	EquipmentId string `json:"equipmentId"`
-
-	// ID of the staff member reporting the issue
-	ReportedBy string `json:"reportedBy,omitempty"`
 }

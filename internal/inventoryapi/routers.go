@@ -97,18 +97,6 @@ func getRoutes(handleFunctions ApiHandleFunctions) []Route {
 			handleFunctions.EquipmentAPI.ListEquipment,
 		},
 		{
-			"ListEquipmentServiceRequests",
-			http.MethodGet,
-			"/v1/equipment/:equipmentId/service-requests",
-			handleFunctions.EquipmentAPI.ListEquipmentServiceRequests,
-		},
-		{
-			"MoveEquipment",
-			http.MethodPatch,
-			"/v1/equipment/:equipmentId/location",
-			handleFunctions.EquipmentAPI.MoveEquipment,
-		},
-		{
 			"UpdateEquipment",
 			http.MethodPut,
 			"/v1/equipment/:equipmentId",
@@ -173,12 +161,6 @@ func getRoutes(handleFunctions ApiHandleFunctions) []Route {
 			http.MethodGet,
 			"/v1/service-requests",
 			handleFunctions.ServiceRequestsAPI.ListServiceRequests,
-		},
-		{
-			"TransitionServiceRequestStatus",
-			http.MethodPatch,
-			"/v1/service-requests/:requestId/status",
-			handleFunctions.ServiceRequestsAPI.TransitionServiceRequestStatus,
 		},
 		{
 			"UpdateServiceRequest",

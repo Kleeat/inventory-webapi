@@ -29,14 +29,6 @@ type ServiceRequest struct {
 
 	Equipment Equipment `json:"equipment,omitempty"`
 
-	ReportedBy string `json:"reportedBy,omitempty"`
-
-	AssignedTo *string `json:"assignedTo,omitempty"`
-
-	ResolutionNote *string `json:"resolutionNote,omitempty"`
-
-	ClosedAt *time.Time `json:"closedAt,omitempty"`
-
 	CreatedAt time.Time `json:"createdAt"`
 
 	UpdatedAt time.Time `json:"updatedAt"`

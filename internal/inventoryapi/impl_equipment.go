@@ -74,12 +74,7 @@ func (api *implEquipmentAPI) CreateEquipment(c *gin.Context) {
 		Name:            body.Name,
 		Type:            body.Type,
 		InventoryNumber: body.InventoryNumber,
-		SerialNumber:    body.SerialNumber,
-		Manufacturer:    body.Manufacturer,
-		Model:           body.Model,
-		PurchaseDate:    body.PurchaseDate,
 		WarrantyExpiry:  body.WarrantyExpiry,
-		LifespanYears:   body.LifespanYears,
 		LocationId:      body.LocationId,
 		Notes:           body.Notes,
 		Status:          ACTIVE,
@@ -296,12 +291,7 @@ func (api *implEquipmentAPI) UpdateEquipment(c *gin.Context) {
 		Name:                    body.Name,
 		Type:                    body.Type,
 		InventoryNumber:         body.InventoryNumber,
-		SerialNumber:            body.SerialNumber,
-		Manufacturer:            body.Manufacturer,
-		Model:                   body.Model,
-		PurchaseDate:            body.PurchaseDate,
 		WarrantyExpiry:          body.WarrantyExpiry,
-		LifespanYears:           body.LifespanYears,
 		LocationId:              body.LocationId,
 		Notes:                   body.Notes,
 		Status:                  body.Status,
@@ -380,138 +370,3 @@ func (api *implEquipmentAPI) DecommissionEquipment(c *gin.Context) {
 	}
 }
 
-func (api *implEquipmentAPI) MoveEquipment(c *gin.Context) {
-	db, ok := getEquipmentDb(c)
-	if !ok {
-		return
-	}
-	locationDb, ok := getLocationDb(c)
-	if !ok {
-		return
-	}
-
-	equipmentId := c.Param("equipmentId")
-
-	ctx, cancel := context.WithTimeout(c.Request.Context(), dbTimeout)
-	defer cancel()
-
-	existing, err := db.FindDocument(ctx, equipmentId)
-	switch err {
-	case nil:
-	case db_service.ErrNotFound:
-		respondError(c, http.StatusNotFound, "Equipment not found", err)
-		return
-	default:
-		respondError(c, http.StatusInternalServerError, "Failed to retrieve equipment", err)
-		return
-	}
-
-	var body MoveEquipmentRequest
-	if err := c.ShouldBindJSON(&body); err != nil {
-		respondError(c, http.StatusBadRequest, "Invalid request body", err)
-		return
-	}
-
-	body.LocationId = strings.TrimSpace(body.LocationId)
-	if body.LocationId == "" {
-		respondError(c, http.StatusBadRequest, "missing required field: locationId", nil)
-		return
-	}
-
-	location, err := locationDb.FindDocument(ctx, body.LocationId)
-	switch err {
-	case nil:
-	case db_service.ErrNotFound:
-		respondError(c, http.StatusBadRequest, "Location not found", err)
-		return
-	default:
-		respondError(c, http.StatusInternalServerError, "Failed to verify location", err)
-		return
-	}
-
-	moved := *existing
-	moved.LocationId = body.LocationId
-	moved.UpdatedAt = time.Now().UTC()
-
-	err = db.UpdateDocument(ctx, equipmentId, &moved)
-	switch err {
-	case nil:
-	case db_service.ErrNotFound:
-		respondError(c, http.StatusNotFound, "Equipment not found", err)
-		return
-	default:
-		respondError(c, http.StatusInternalServerError, "Failed to move equipment", err)
-		return
-	}
-
-	eq := equipmentFromDoc(&moved)
-	eq.Location = *location
-	c.JSON(http.StatusOK, eq)
-}
-
-func (api *implEquipmentAPI) ListEquipmentServiceRequests(c *gin.Context) {
-	db, ok := getEquipmentDb(c)
-	if !ok {
-		return
-	}
-	serviceRequestDb, ok := getServiceRequestDb(c)
-	if !ok {
-		return
-	}
-
-	equipmentId := c.Param("equipmentId")
-
-	ctx, cancel := context.WithTimeout(c.Request.Context(), dbTimeout)
-	defer cancel()
-
-	_, err := db.FindDocument(ctx, equipmentId)
-	switch err {
-	case nil:
-	case db_service.ErrNotFound:
-		respondError(c, http.StatusNotFound, "Equipment not found", err)
-		return
-	default:
-		respondError(c, http.StatusInternalServerError, "Failed to retrieve equipment", err)
-		return
-	}
-
-	page, pageSize := parsePage(c)
-
-	filter := bson.D{{Key: "equipmentId", Value: equipmentId}}
-	if v := c.Query("status"); v != "" {
-		filter = append(filter, bson.E{Key: "status", Value: v})
-	}
-
-	total, err := serviceRequestDb.CountDocumentsByFilter(ctx, filter)
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, "Failed to count service requests", err)
-		return
-	}
-
-	skip := int64((page - 1) * pageSize)
-	results, err := serviceRequestDb.FindDocumentsByFilterPaginated(ctx, filter, skip, int64(pageSize))
-	if err != nil {
-		respondError(c, http.StatusInternalServerError, "Failed to list service requests", err)
-		return
-	}
-
-	// ServiceRequestPage.Content is []ServiceRequest (generated type); copy from []*ServiceRequestDoc is unavoidable.
-	content := make([]ServiceRequest, len(results))
-	for i, doc := range results {
-		content[i] = *serviceRequestFromDoc(doc)
-	}
-
-	totalElements := int32(total)
-	totalPages := (totalElements + int32(pageSize) - 1) / int32(pageSize)
-	if totalPages == 0 {
-		totalPages = 1
-	}
-
-	c.JSON(http.StatusOK, ServiceRequestPage{
-		Content:       content,
-		TotalElements: totalElements,
-		TotalPages:    totalPages,
-		Page:          int32(page),
-		PageSize:      int32(pageSize),
-	})
-}

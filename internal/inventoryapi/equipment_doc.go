@@ -9,12 +9,7 @@ type EquipmentDoc struct {
 	Name                    string          `bson:"name"`
 	Type                    string          `bson:"type"`
 	InventoryNumber         string          `bson:"inventoryNumber"`
-	SerialNumber            string          `bson:"serialNumber,omitempty"`
-	Manufacturer            string          `bson:"manufacturer,omitempty"`
-	Model                   string          `bson:"model,omitempty"`
-	PurchaseDate            string          `bson:"purchaseDate,omitempty"`
 	WarrantyExpiry          string          `bson:"warrantyExpiry,omitempty"`
-	LifespanYears           int32           `bson:"lifespanYears,omitempty"`
 	LocationId              string          `bson:"locationId"`
 	Notes                   string          `bson:"notes,omitempty"`
 	Status                  EquipmentStatus `bson:"status"`
@@ -29,12 +24,7 @@ func equipmentFromDoc(doc *EquipmentDoc) *Equipment {
 		Name:                    doc.Name,
 		Type:                    doc.Type,
 		InventoryNumber:         doc.InventoryNumber,
-		SerialNumber:            doc.SerialNumber,
-		Manufacturer:            doc.Manufacturer,
-		Model:                   doc.Model,
-		PurchaseDate:            doc.PurchaseDate,
 		WarrantyExpiry:          doc.WarrantyExpiry,
-		LifespanYears:           doc.LifespanYears,
 		LocationId:              doc.LocationId,
 		Notes:                   doc.Notes,
 		Status:                  doc.Status,
@@ -50,12 +40,7 @@ func equipmentToDoc(eq *Equipment) *EquipmentDoc {
 		Name:                    eq.Name,
 		Type:                    eq.Type,
 		InventoryNumber:         eq.InventoryNumber,
-		SerialNumber:            eq.SerialNumber,
-		Manufacturer:            eq.Manufacturer,
-		Model:                   eq.Model,
-		PurchaseDate:            eq.PurchaseDate,
 		WarrantyExpiry:          eq.WarrantyExpiry,
-		LifespanYears:           eq.LifespanYears,
 		LocationId:              eq.LocationId,
 		Notes:                   eq.Notes,
 		Status:                  eq.Status,

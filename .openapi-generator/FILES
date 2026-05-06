@@ -15,7 +15,6 @@ internal/inventoryapi/model_location_base.go
 internal/inventoryapi/model_location_create.go
 internal/inventoryapi/model_location_page.go
 internal/inventoryapi/model_location_update.go
-internal/inventoryapi/model_move_equipment_request.go
 internal/inventoryapi/model_priority.go
 internal/inventoryapi/model_service_request.go
 internal/inventoryapi/model_service_request_base.go
@@ -23,5 +22,4 @@ internal/inventoryapi/model_service_request_create.go
 internal/inventoryapi/model_service_request_page.go
 internal/inventoryapi/model_service_request_status.go
 internal/inventoryapi/model_service_request_update.go
-internal/inventoryapi/model_transition_service_request_status_request.go
 internal/inventoryapi/routers.go

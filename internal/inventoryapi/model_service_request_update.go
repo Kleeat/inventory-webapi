@@ -16,4 +16,6 @@ type ServiceRequestUpdate struct {
 	Description string `json:"description,omitempty"`
 
 	Priority Priority `json:"priority,omitempty"`
+
+	Status ServiceRequestStatus `json:"status,omitempty"`
 }

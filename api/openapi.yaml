@@ -139,70 +139,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /equipment/{equipmentId}/location:
-    parameters:
-      - $ref: '#/components/parameters/EquipmentId'
-
-    patch:
-      tags: [Equipment]
-      summary: Move equipment to a new location
-      operationId: moveEquipment
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [locationId]
-              properties:
-                locationId:
-                  type: string
-                  format: uuid
-                  description: Target location ID
-                movedAt:
-                  type: string
-                  format: date-time
-                  description: Timestamp of the move (defaults to now)
-                note:
-                  type: string
-                  maxLength: 500
-      responses:
-        '200':
-          description: Equipment with updated location
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Equipment'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /equipment/{equipmentId}/service-requests:
-    parameters:
-      - $ref: '#/components/parameters/EquipmentId'
-
-    get:
-      tags: [Equipment]
-      summary: List service requests for equipment
-      operationId: listEquipmentServiceRequests
-      parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PageSizeParam'
-        - name: status
-          in: query
-          schema:
-            $ref: '#/components/schemas/ServiceRequestStatus'
-      responses:
-        '200':
-          description: Service requests for this equipment
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ServiceRequestPage'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
   /service-requests:
     get:
       tags: [Service Requests]
@@ -217,12 +153,6 @@ paths:
             $ref: '#/components/schemas/ServiceRequestStatus'
         - name: equipmentId
           in: query
-          schema:
-            type: string
-            format: uuid
-        - name: assignedTo
-          in: query
-          description: Filter by assigned technician ID
           schema:
             type: string
             format: uuid
@@ -287,8 +217,8 @@ paths:
 
     put:
       tags: [Service Requests]
-      summary: Update service request details
-      description: Updates editable fields. To change status use PATCH /service-requests/{id}/status.
+      summary: Update service request
+      description: Full update of service request fields including status.
       operationId: updateServiceRequest
       requestBody:
         required: true
@@ -326,56 +256,6 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           description: Cannot delete a request that is already assigned or in progress
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /service-requests/{requestId}/status:
-    parameters:
-      - $ref: '#/components/parameters/RequestId'
-
-    patch:
-      tags: [Service Requests]
-      summary: Transition service request status
-      description: |
-        Allowed status transitions:
-        - `NEW` → `ASSIGNED`
-        - `ASSIGNED` → `IN_PROGRESS`
-        - `IN_PROGRESS` → `CLOSED`
-        - `ASSIGNED` → `NEW` (unassign)
-      operationId: transitionServiceRequestStatus
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [status]
-              properties:
-                status:
-                  $ref: '#/components/schemas/ServiceRequestStatus'
-                assignedTo:
-                  type: string
-                  format: uuid
-                  description: Required when transitioning to ASSIGNED
-                resolutionNote:
-                  type: string
-                  maxLength: 2000
-                  description: Required when transitioning to CLOSED
-      responses:
-        '200':
-          description: Service request with updated status
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ServiceRequest'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '422':
-          description: Invalid status transition
           content:
             application/json:
               schema:
@@ -696,26 +576,9 @@ components:
           maxLength: 50
           description: Unique inventory/asset number
           example: "INV-2024-00421"
-        serialNumber:
-          type: string
-          maxLength: 100
-        manufacturer:
-          type: string
-          maxLength: 200
-        model:
-          type: string
-          maxLength: 200
-        purchaseDate:
-          type: string
-          format: date
         warrantyExpiry:
           type: string
           format: date
-        lifespanYears:
-          type: integer
-          minimum: 1
-          maximum: 100
-          description: Expected operational lifespan in years
         locationId:
           type: string
           format: uuid
@@ -727,6 +590,13 @@ components:
     EquipmentCreate:
       allOf:
         - $ref: '#/components/schemas/EquipmentBase'
+      example:
+        name: "Ultrazvuk Philips EPIQ 7"
+        type: "Ultrasonograf"
+        inventoryNumber: "INV-2024-00421"
+        warrantyExpiry: "2026-12-31"
+        locationId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+        notes: "Pravidelná údržba každých 6 mesiacov"
 
     EquipmentUpdate:
       allOf:
@@ -735,6 +605,14 @@ components:
           properties:
             status:
               $ref: '#/components/schemas/EquipmentStatus'
+      example:
+        name: "Ultrazvuk Philips EPIQ 7"
+        type: "Ultrasonograf"
+        inventoryNumber: "INV-2024-00421"
+        warrantyExpiry: "2026-12-31"
+        locationId: "a1b2c3d4-5717-4562-b3fc-2c963f66afa6"
+        notes: "Premiestnené do operačnej sály"
+        status: "ACTIVE"
 
     Equipment:
       allOf:
@@ -796,12 +674,11 @@ components:
     ServiceRequestCreate:
       allOf:
         - $ref: '#/components/schemas/ServiceRequestBase'
-        - type: object
-          properties:
-            reportedBy:
-              type: string
-              format: uuid
-              description: ID of the staff member reporting the issue
+      example:
+        equipmentId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+        title: "Porucha displeja – nereaguje na dotyk"
+        description: "Displej prestáva reagovať po 30 minútach prevádzky."
+        priority: "HIGH"
 
     ServiceRequestUpdate:
       type: object
@@ -814,6 +691,13 @@ components:
           maxLength: 5000
         priority:
           $ref: '#/components/schemas/Priority'
+        status:
+          $ref: '#/components/schemas/ServiceRequestStatus'
+      example:
+        title: "Porucha displeja – nereaguje na dotyk"
+        description: "Displej prestáva reagovať po 30 minútach prevádzky."
+        priority: "HIGH"
+        status: "IN_PROGRESS"
 
     ServiceRequest:
       allOf:
@@ -828,26 +712,21 @@ components:
               $ref: '#/components/schemas/ServiceRequestStatus'
             equipment:
               $ref: '#/components/schemas/Equipment'
-            reportedBy:
-              type: string
-              format: uuid
-            assignedTo:
-              type: string
-              format: uuid
-              nullable: true
-            resolutionNote:
-              type: string
-              nullable: true
-            closedAt:
-              type: string
-              format: date-time
-              nullable: true
             createdAt:
               type: string
               format: date-time
             updatedAt:
               type: string
               format: date-time
+      example:
+        id: "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+        equipmentId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+        title: "Porucha displeja – nereaguje na dotyk"
+        description: "Displej prestáva reagovať po 30 minútach prevádzky."
+        priority: "HIGH"
+        status: "IN_PROGRESS"
+        createdAt: "2024-03-15T08:30:00Z"
+        updatedAt: "2024-03-16T10:00:00Z"
 
     ServiceRequestPage:
       type: object

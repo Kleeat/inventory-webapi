@@ -30,22 +30,6 @@ func validateServiceRequestCreate(title, description string, priority Priority, 
 	return nil
 }
 
-// validTransitions defines the allowed status state machine.
-var validTransitions = map[ServiceRequestStatus][]ServiceRequestStatus{
-	NEW:         {ASSIGNED},
-	ASSIGNED:    {IN_PROGRESS, NEW},
-	IN_PROGRESS: {CLOSED},
-}
-
-func isValidTransition(from, to ServiceRequestStatus) bool {
-	for _, allowed := range validTransitions[from] {
-		if allowed == to {
-			return true
-		}
-	}
-	return false
-}
-
 func srLookupPipeline(matchStage bson.D, equipmentCollectionName string) bson.A {
 	return bson.A{
 		bson.D{{Key: "$match", Value: matchStage}},
@@ -124,7 +108,6 @@ func (api *implServiceRequestsAPI) CreateServiceRequest(c *gin.Context) {
 		Description: body.Description,
 		Priority:    body.Priority,
 		EquipmentId: body.EquipmentId,
-		ReportedBy:  body.ReportedBy,
 		Status:      NEW,
 		CreatedAt:   now,
 		UpdatedAt:   now,
@@ -199,9 +182,6 @@ func (api *implServiceRequestsAPI) ListServiceRequests(c *gin.Context) {
 	}
 	if v := c.Query("equipmentId"); v != "" {
 		filter = append(filter, bson.E{Key: "equipmentId", Value: v})
-	}
-	if v := c.Query("assignedTo"); v != "" {
-		filter = append(filter, bson.E{Key: "assignedTo", Value: v})
 	}
 	if v := c.Query("priority"); v != "" {
 		filter = append(filter, bson.E{Key: "priority", Value: v})
@@ -306,6 +286,9 @@ func (api *implServiceRequestsAPI) UpdateServiceRequest(c *gin.Context) {
 	if body.Priority != "" {
 		updated.Priority = body.Priority
 	}
+	if body.Status != "" {
+		updated.Status = body.Status
+	}
 	updated.UpdatedAt = time.Now().UTC()
 
 	err = srDb.UpdateDocument(ctx, requestId, &updated)
@@ -364,84 +347,3 @@ func (api *implServiceRequestsAPI) DeleteServiceRequest(c *gin.Context) {
 	}
 }
 
-func (api *implServiceRequestsAPI) TransitionServiceRequestStatus(c *gin.Context) {
-	srDb, ok := getServiceRequestDb(c)
-	if !ok {
-		return
-	}
-	equipmentDb, ok := getEquipmentDb(c)
-	if !ok {
-		return
-	}
-
-	requestId := c.Param("requestId")
-
-	ctx, cancel := context.WithTimeout(c.Request.Context(), dbTimeout)
-	defer cancel()
-
-	existing, err := srDb.FindDocument(ctx, requestId)
-	switch err {
-	case nil:
-	case db_service.ErrNotFound:
-		respondError(c, http.StatusNotFound, "Service request not found", err)
-		return
-	default:
-		respondError(c, http.StatusInternalServerError, "Failed to retrieve service request", err)
-		return
-	}
-
-	var body TransitionServiceRequestStatusRequest
-	if err := c.ShouldBindJSON(&body); err != nil {
-		respondError(c, http.StatusBadRequest, "Invalid request body", err)
-		return
-	}
-
-	if !isValidTransition(existing.Status, body.Status) {
-		respondError(c, http.StatusUnprocessableEntity,
-			fmt.Sprintf("Invalid status transition: %s → %s", existing.Status, body.Status), nil)
-		return
-	}
-
-	if body.Status == ASSIGNED && strings.TrimSpace(body.AssignedTo) == "" {
-		respondError(c, http.StatusBadRequest, "assignedTo is required when transitioning to ASSIGNED", nil)
-		return
-	}
-	if body.Status == CLOSED && strings.TrimSpace(body.ResolutionNote) == "" {
-		respondError(c, http.StatusBadRequest, "resolutionNote is required when transitioning to CLOSED", nil)
-		return
-	}
-
-	updated := *existing
-	updated.Status = body.Status
-	updated.UpdatedAt = time.Now().UTC()
-
-	switch body.Status {
-	case ASSIGNED:
-		assignedTo := strings.TrimSpace(body.AssignedTo)
-		updated.AssignedTo = &assignedTo
-	case NEW:
-		updated.AssignedTo = nil
-	case CLOSED:
-		resolutionNote := strings.TrimSpace(body.ResolutionNote)
-		updated.ResolutionNote = &resolutionNote
-		now := time.Now().UTC()
-		updated.ClosedAt = &now
-	}
-
-	err = srDb.UpdateDocument(ctx, requestId, &updated)
-	switch err {
-	case nil:
-	case db_service.ErrNotFound:
-		respondError(c, http.StatusNotFound, "Service request not found", err)
-		return
-	default:
-		respondError(c, http.StatusInternalServerError, "Failed to update service request status", err)
-		return
-	}
-
-	sr := serviceRequestFromDoc(&updated)
-	if eq, err := equipmentDb.FindDocument(ctx, updated.EquipmentId); err == nil {
-		sr.Equipment = *equipmentFromDoc(eq)
-	}
-	c.JSON(http.StatusOK, sr)
-}

@@ -32,14 +32,6 @@ type EquipmentAPI interface {
     // List equipment 
      ListEquipment(c *gin.Context)
 
-    // ListEquipmentServiceRequests Get /v1/equipment/:equipmentId/service-requests
-    // List service requests for equipment 
-     ListEquipmentServiceRequests(c *gin.Context)
-
-    // MoveEquipment Patch /v1/equipment/:equipmentId/location
-    // Move equipment to a new location 
-     MoveEquipment(c *gin.Context)
-
     // UpdateEquipment Put /v1/equipment/:equipmentId
     // Update equipment 
      UpdateEquipment(c *gin.Context)

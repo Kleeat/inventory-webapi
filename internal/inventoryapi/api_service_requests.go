@@ -32,12 +32,8 @@ type ServiceRequestsAPI interface {
     // List service requests 
      ListServiceRequests(c *gin.Context)
 
-    // TransitionServiceRequestStatus Patch /v1/service-requests/:requestId/status
-    // Transition service request status 
-     TransitionServiceRequestStatus(c *gin.Context)
-
     // UpdateServiceRequest Put /v1/service-requests/:requestId
-    // Update service request details 
+    // Update service request 
      UpdateServiceRequest(c *gin.Context)
 
 }
