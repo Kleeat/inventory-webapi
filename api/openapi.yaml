@@ -4,10 +4,10 @@ info:
   description: API for managing hospital equipment inventory, service requests, and location tracking.
   version: 1.0.0
   contact:
-    name: Dmytro Dzhuha, Szenasi Levente
+    name: Dmytro Dzhuha, Levente Szenasi
 
 servers:
-  - url: http://localhost:8080/v1
+  - url: http://localhost:8080
     description: Local development
 
 tags:
