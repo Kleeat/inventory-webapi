@@ -16,27 +16,27 @@ import (
 type LocationsAPI interface {
 
 
-    // CreateLocation Post /v1/locations
+    // CreateLocation Post /locations
     // Create location 
      CreateLocation(c *gin.Context)
 
-    // DeleteLocation Delete /v1/locations/:locationId
+    // DeleteLocation Delete /locations/:locationId
     // Delete location 
      DeleteLocation(c *gin.Context)
 
-    // GetLocation Get /v1/locations/:locationId
+    // GetLocation Get /locations/:locationId
     // Get location 
      GetLocation(c *gin.Context)
 
-    // ListEquipmentAtLocation Get /v1/locations/:locationId/equipment
+    // ListEquipmentAtLocation Get /locations/:locationId/equipment
     // List equipment at a location 
      ListEquipmentAtLocation(c *gin.Context)
 
-    // ListLocations Get /v1/locations
+    // ListLocations Get /locations
     // List locations 
      ListLocations(c *gin.Context)
 
-    // UpdateLocation Put /v1/locations/:locationId
+    // UpdateLocation Put /locations/:locationId
     // Update location 
      UpdateLocation(c *gin.Context)
 

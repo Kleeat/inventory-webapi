@@ -16,23 +16,23 @@ import (
 type EquipmentAPI interface {
 
 
-    // CreateEquipment Post /v1/equipment
+    // CreateEquipment Post /equipment
     // Create equipment 
      CreateEquipment(c *gin.Context)
 
-    // DecommissionEquipment Delete /v1/equipment/:equipmentId
+    // DecommissionEquipment Delete /equipment/:equipmentId
     // Decommission equipment 
      DecommissionEquipment(c *gin.Context)
 
-    // GetEquipment Get /v1/equipment/:equipmentId
+    // GetEquipment Get /equipment/:equipmentId
     // Get equipment 
      GetEquipment(c *gin.Context)
 
-    // ListEquipment Get /v1/equipment
+    // ListEquipment Get /equipment
     // List equipment 
      ListEquipment(c *gin.Context)
 
-    // UpdateEquipment Put /v1/equipment/:equipmentId
+    // UpdateEquipment Put /equipment/:equipmentId
     // Update equipment 
      UpdateEquipment(c *gin.Context)
 

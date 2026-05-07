@@ -16,23 +16,23 @@ import (
 type ServiceRequestsAPI interface {
 
 
-    // CreateServiceRequest Post /v1/service-requests
+    // CreateServiceRequest Post /service-requests
     // Create service request 
      CreateServiceRequest(c *gin.Context)
 
-    // DeleteServiceRequest Delete /v1/service-requests/:requestId
+    // DeleteServiceRequest Delete /service-requests/:requestId
     // Delete service request 
      DeleteServiceRequest(c *gin.Context)
 
-    // GetServiceRequest Get /v1/service-requests/:requestId
+    // GetServiceRequest Get /service-requests/:requestId
     // Get service request 
      GetServiceRequest(c *gin.Context)
 
-    // ListServiceRequests Get /v1/service-requests
+    // ListServiceRequests Get /service-requests
     // List service requests 
      ListServiceRequests(c *gin.Context)
 
-    // UpdateServiceRequest Put /v1/service-requests/:requestId
+    // UpdateServiceRequest Put /service-requests/:requestId
     // Update service request 
      UpdateServiceRequest(c *gin.Context)
 
